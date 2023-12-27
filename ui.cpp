@@ -60,8 +60,6 @@ namespace c8::ui
             c8::cpu::keyboardKeyPressed(value);
             return;
         }
-
-        std::cout << event.key.code << std::endl;
     }
 
     void pollInput()

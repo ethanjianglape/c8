@@ -3,7 +3,7 @@ CFLAGS = -std=c++20 -O3 -Wall -Wextra
 LDLIBS = -lsfml-graphics -lsfml-window -lsfml-system
 
 c8: main.o cpu.o memory.o opcodes.o vga.o ui.o
-	$(CC) -o bin/c8 bin/*.o $(LDLIBS)
+	$(CC) $(CFLAGS) -o bin/c8 bin/main.o bin/cpu.o bin/memory.o bin/opcodes.o bin/vga.o bin/ui.o $(LDLIBS)
 
 clean:
 	rm bin/main.o bin/cpu.o bin/memory.o bin/opcodes.o bin/vga.o bin/ui.o bin/c8
