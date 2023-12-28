@@ -33,7 +33,7 @@ namespace c8::ui
         font.loadFromMemory(&c8::fonts::courierFontData, c8::fonts::courierFontDataLength);
 
         sf::VideoMode vm{c8::vga::hostRenderWidth, 1000, sf::VideoMode::getDesktopMode().bitsPerPixel};
-        window = std::make_unique<sf::RenderWindow>(vm, "C8");
+        window = std::make_unique<sf::RenderWindow>(vm, "c8");
     }
 
     void processKeyPressed(const sf::Event& event)
