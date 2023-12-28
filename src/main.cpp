@@ -64,6 +64,7 @@ void loop()
         const auto start = clock::now();
 
         c8::ui::pollInput();
+        c8::cpu::decrementTimers();
 
         if (clockCycles < c8::config::targetCpuFrequency) {
             auto cyclesThisFrame = c8::config::targetCpuCyclesPerFrame;
@@ -79,7 +80,6 @@ void loop()
             }
         }
 
-        c8::cpu::decrementTimers();
         c8::ui::draw();
 
         frames++;
@@ -110,6 +110,4 @@ int main(int argc, char** argv)
     processArgs(argc, argv);
 
     loop();
-
-    c8::cpu::destroy();
 }

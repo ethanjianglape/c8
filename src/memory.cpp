@@ -82,7 +82,7 @@ namespace c8::mem
            << c8::opcodes::getOpcodeName(word) << "\n";
     }
 
-    void draw(sf::RenderTexture& texture)
+    void render(sf::RenderTexture& texture)
     {
         const int linesAroundPc = 10;
         const std::uint16_t pc = c8::cpu::getProgramCounter();

@@ -108,8 +108,8 @@ namespace c8::ui
         cpuInfoTexture.clear(sf::Color::Black);
         memoryTexture.clear(sf::Color::Black);
 
-        c8::cpu::draw(vgaTexture, cpuInfoTexture);
-        c8::mem::draw(memoryTexture);
+        c8::cpu::render(vgaTexture, cpuInfoTexture);
+        c8::mem::render(memoryTexture);
 
         vgaTexture.display();
         cpuInfoTexture.display();

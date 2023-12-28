@@ -42,8 +42,6 @@ namespace c8::cpu
 
     void setFps(int fps);
 
-    void destroy();
-
     void reset();
 
     void keyboardKeyPressed(std::uint8_t value);
@@ -58,11 +56,9 @@ namespace c8::cpu
 
     void decrementTimers();
 
-    void draw(sf::RenderTexture& vgaTexture, sf::RenderTexture& cpuInfoTexture);
+    void render(sf::RenderTexture& vgaTexture, sf::RenderTexture& cpuInfoTexture);
 
     std::uint8_t* getRegister(const std::uint8_t index);
-
-    void processOpcode(const std::uint16_t opcode);
 
     void executeClockCycle();
 

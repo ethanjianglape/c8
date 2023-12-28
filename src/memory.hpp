@@ -31,7 +31,7 @@ namespace c8::mem
 
     void reset();
 
-    void draw(sf::RenderTexture& texture);
+    void render(sf::RenderTexture& texture);
 
     std::uint8_t readByte(const std::uint16_t addr);
 

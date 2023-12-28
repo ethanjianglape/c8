@@ -13,6 +13,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <array>
 #include <algorithm>
 #include <cstring>
 #include <unordered_map>
@@ -29,10 +30,6 @@ namespace c8::cpu
     std::mt19937 generator{rd()};
     std::uniform_int_distribution<std::uint8_t> distribution{0, 255};
 
-    constexpr int maxCpuStates = 1000;
-    int cpuStates = 0;
-    int cpuStateIndex = 0;
-
     int cpuHertz;
     int hostFps;
 
@@ -42,13 +39,9 @@ namespace c8::cpu
 
     std::uint8_t keyboardPressedValue;
 
-    bool isKeyPressed[16];
-
-    struct CpuState
+    class CpuState
     {
-        CpuState* previousState;
-        CpuState* nextState;
-        
+    public:
         c8::vga::VgaState vgaState;
 
         std::uint16_t pc;
@@ -58,35 +51,8 @@ namespace c8::cpu
         std::uint8_t st;
         std::uint8_t sp;
 
-        std::uint8_t v[16];
-
+        std::array<std::uint8_t, 16> v;
         std::stack<std::uint16_t> stack;
-
-        bool didUpdate;
-
-        CpuState() : 
-            previousState{nullptr}, 
-            nextState{nullptr}, 
-            didUpdate{true}
-        {
-        }
-
-        CpuState(CpuState* state)
-        {
-            previousState = state;
-            nextState = nullptr;
-
-            pc = state->pc;
-            ir = state->ir;
-            dt = state->dt;
-            st = state->st;
-            sp = state->sp;
-            stack = state->stack;
-            didUpdate = true;
-            vgaState = c8::vga::VgaState{state->vgaState};
-
-            std::memcpy(v, state->v, 16);
-        }
 
         std::uint8_t* getRegister(const std::uint8_t index)
         {
@@ -94,7 +60,7 @@ namespace c8::cpu
                 return nullptr;
             }
 
-            return v + index;
+            return &v[index];
         }
 
         std::uint16_t popFromStack()
@@ -124,40 +90,48 @@ namespace c8::cpu
             return 0xFF;
         }
 
-        void CLS()
+        bool CLS()
         {
             vgaState.clear();
             pc += 2;
+
+            return true;
         }
 
-        void RET()
+        bool RET()
         {
             const std::uint16_t addr = popFromStack();
 
             pc = addr + 2;
+
+            return true;
         }
 
-        void JP_Addr(const std::uint16_t addr)
+        bool JP_Addr(const std::uint16_t addr)
         {
             if (pc == addr) {
-                didUpdate = false;
-            } else {
-                pc = addr;
+                return false;
             }
+
+            pc = addr;
+
+            return true;
         }
 
-        void CALL_Addr(const std::uint16_t addr)
+        bool CALL_Addr(const std::uint16_t addr)
         {
             pushToStack(pc);
             pc = addr;
+
+            return true;
         }
 
-        void SE_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
+        bool SE_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             if (*vx == value) {
@@ -165,14 +139,16 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
-        void SNE_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
+        bool SNE_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             if (*vx != value) {
@@ -180,16 +156,18 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
 
-        void SE_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool SE_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             if (*vx == *vy) {
@@ -197,91 +175,105 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
-        void LD_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
+        bool LD_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             *vx = value;
             pc += 2;
+
+            return true;
         }
 
-        void ADD_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
+        bool ADD_Vx_Byte(const std::uint8_t x, const std::uint8_t value)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             *vx += value;
             pc += 2;
+
+            return true;
         }
 
-        void LD_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool LD_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             *vx = *vy;
             pc += 2;
+
+            return true;
         }
 
-        void OR_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool OR_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             *vx = *vx | *vy;
             pc += 2;
+
+            return true;
         }
 
-        void AND_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool AND_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             *vx = *vx & *vy;
             pc += 2;
+
+            return true;
         }
 
-        void XOR_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool XOR_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             *vx = *vx ^ *vy;
             pc += 2;
+
+            return true;
         }
 
-        void ADD_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool ADD_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             const auto result = (int)*vx + (int)*vy;
@@ -290,15 +282,17 @@ namespace c8::cpu
             *vx = static_cast<std::uint8_t>(result);
 
             pc += 2;
+
+            return true;
         }
 
-        void SUB_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool SUB_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             const auto result = *vx - *vy;
@@ -307,15 +301,17 @@ namespace c8::cpu
 
             *vx = static_cast<std::uint8_t>(result);
             pc += 2;
+
+            return true;
         }
 
-        void SHR_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool SHR_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             if (c8::quirks::shiftWithVy) {
@@ -328,15 +324,17 @@ namespace c8::cpu
 
             *vx = *vx >> 1;
             pc += 2;
+
+            return true;
         }
 
-        void SUBN_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool SUBN_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             const auto result = *vy - *vx;
@@ -345,15 +343,17 @@ namespace c8::cpu
 
             *vx = static_cast<std::uint8_t>(result);   
             pc += 2;
+
+            return true;
         }
 
-        void SHL_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool SHL_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             if (c8::quirks::shiftWithVy) {
@@ -366,15 +366,17 @@ namespace c8::cpu
 
             *vx = *vx << 1;
             pc += 2;
+
+            return true;
         }
 
-        void SNE_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
+        bool SNE_Vx_Vy(const std::uint8_t x, const std::uint8_t y)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr) {
-                return;
+                return false;
             }
 
             if (*vx != *vy) {
@@ -382,40 +384,48 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
-        void LD_I_Addr(const std::uint16_t value) 
+        bool LD_I_Addr(const std::uint16_t value) 
         {
             ir = value;
             pc += 2;
+
+            return true;
         }
 
-        void JP_V0_Addr(const std::uint16_t value)
+        bool JP_V0_Addr(const std::uint16_t value)
         {
             pc = value + v[0];
+
+            return true;
         }
 
-        void RND_Vx_Byte(const std::uint8_t x, const std::uint16_t value)
+        bool RND_Vx_Byte(const std::uint8_t x, const std::uint16_t value)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             const std::uint8_t randomValue = distribution(generator);
 
             *vx = randomValue & value;
             pc += 2;
+
+            return true;
         }
 
-        void DRW_Vx_Vy_Nibble(const std::uint8_t x, const std::uint8_t y, const std::uint8_t n)
+        bool DRW_Vx_Vy_Nibble(const std::uint8_t x, const std::uint8_t y, const std::uint8_t n)
         {
             std::uint8_t* vx = getRegister(x);
             std::uint8_t* vy = getRegister(y);
 
             if (vx == nullptr || vy == nullptr || n == 0) {
-                return;
+                return false;
             }
 
             bool didErase = false;
@@ -428,14 +438,16 @@ namespace c8::cpu
 
             v[15] = didErase ? 1 : 0;
             pc += 2;
+
+            return true;
         }
 
-        void SKP_Vx(const std::uint8_t x) 
+        bool SKP_Vx(const std::uint8_t x) 
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             const std::uint8_t input = getCurrentKeyboardValue();
@@ -445,14 +457,16 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
-        void SKNP_Vx(const std::uint8_t x)
+        bool SKNP_Vx(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             const std::uint8_t input = getCurrentKeyboardValue();
@@ -462,33 +476,36 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
-        void LD_Vx_DT(const std::uint8_t x)
+        bool LD_Vx_DT(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             *vx = dt;
             pc += 2;
+
+            return true;
         }
 
-        void LD_Vx_K(const std::uint8_t x)
+        bool LD_Vx_K(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             waitingForKeyboard = true;
 
             if (keyboardPressedValue == 0xFF) {
-                didUpdate = false;
-                return;
+                return false;
             }
 
             *vx = keyboardPressedValue;
@@ -496,62 +513,74 @@ namespace c8::cpu
 
             keyboardPressedValue = 0xFF;
             waitingForKeyboard = false;
+
+            return true;
         }
 
-        void LD_DT_Vx(const std::uint8_t x)
+        bool LD_DT_Vx(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             dt = *vx;
             pc += 2;
+
+            return true;
         }
 
-        void LD_ST_Vx(const std::uint8_t x)
+        bool LD_ST_Vx(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             st = *vx;
             pc += 2;
+
+            return true;
         }
 
-        void ADD_I_Vx(const std::uint8_t x)
+        bool ADD_I_Vx(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             ir = ir + *vx;
             pc += 2;
+
+            return true;
         }
 
-        void LD_F_Vx(const std::uint8_t x)
+        bool LD_F_Vx(const std::uint8_t x)
         {
             std::uint8_t* vx = getRegister(x);
 
             if (vx == nullptr) {
-                return;
+                return false;
             }
 
             ir = c8::mem::getFontSpriteAddress(*vx);
             pc += 2;
+
+            return true;
         }
 
-        void LD_B_Vx(const std::uint8_t x)
+        bool LD_B_Vx(const std::uint8_t x)
         {
             std::cout << "LD B V" << (int)x << std::endl;
+
+            return true;
         }
 
-        void LD_IAddr_Vx(const std::uint8_t x)
+        bool LD_IAddr_Vx(const std::uint8_t x)
         {
             for (std::uint8_t i = 0; i <= x; i++) {
                 std::uint8_t* vx = getRegister(i);
@@ -564,9 +593,11 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
 
-        void LD_Vx_IAddr(const std::uint8_t x)
+        bool LD_Vx_IAddr(const std::uint8_t x)
         {
             for (std::uint8_t i = 0; i <= x; i++) {
                 std::uint8_t* vx = getRegister(i);
@@ -579,12 +610,30 @@ namespace c8::cpu
             }
 
             pc += 2;
+
+            return true;
         }
     };
 
-    CpuState* oldestCpuState;
-    CpuState* cpuState;
-    CpuState* nextCpuState;
+    constexpr int maxCpuStates = 1000;
+    //int cpuStates = 0;
+    //int cpuStateIndex = 0;
+
+    CpuState cpuStates[maxCpuStates];
+
+    std::uint64_t totalCpuCycles = 0;
+    int currentCpuStateDisplayIndex = 0;
+    int currentCpuStateIndex = 0;
+    int headCpuStateIndex = 0;
+
+    //CpuState* oldestCpuState;
+    //CpuState* cpuState;
+    //CpuState* nextCpuState;
+
+    CpuState& getCurrentCpuState()
+    {
+        return cpuStates[currentCpuStateIndex];
+    }
 
     void initialize()
     {
@@ -606,30 +655,16 @@ namespace c8::cpu
         hostFps = fps;
     }
 
-    void destroy()
-    {
-        CpuState* stateToDelete = cpuState;
-
-        while (stateToDelete != nullptr) { 
-            CpuState* previousState = stateToDelete->previousState;
-
-            delete stateToDelete;
-
-            stateToDelete = previousState;
-        }
-    }
-
     void reset()
     {
-        destroy();
+        currentCpuStateIndex = 0;
+        headCpuStateIndex = 0;
+        totalCpuCycles = 0;
 
-        cpuStateIndex = 0;
-        cpuStates = 0;
-        cpuState = new CpuState{};
-        cpuState->pc = 0x200;
-        cpuState->vgaState.clear();
+        CpuState& currentCpuState = getCurrentCpuState();
 
-        oldestCpuState = cpuState;
+        currentCpuState.pc = 0x200;
+        currentCpuState.vgaState.clear();
 
         c8::mem::reset();
     }
@@ -640,23 +675,17 @@ namespace c8::cpu
             return;
         }
 
-        std::cout << (int)value << std::endl;
-
         keyboardPressedValue = value;
     }
 
     std::uint16_t getProgramCounter()
     {
-        return cpuState->pc;
+        return getCurrentCpuState().pc;
     }
 
     void togglePaused()
     {
         paused = !paused;
-
-        if (paused) {
-        } else {
-        }
     }
 
     void advanceOneClockCycle()
@@ -674,30 +703,35 @@ namespace c8::cpu
             return;
         }
 
-        if (cpuState->previousState == nullptr) {
-            return;
+        if (currentCpuStateIndex != headCpuStateIndex + 1) {
+            currentCpuStateIndex = currentCpuStateIndex == 0 ? maxCpuStates - 1 : currentCpuStateIndex - 1;
+            currentCpuStateDisplayIndex--;
         }
 
-        cpuStateIndex--;
-        cpuState = cpuState->previousState;
+        if (totalCpuCycles < maxCpuStates && currentCpuStateIndex > headCpuStateIndex) {
+            currentCpuStateIndex = 0;
+            currentCpuStateDisplayIndex = 0;
+        }
     }
 
-    void drawCpuInfo(sf::RenderTexture& texture)
+    void renderCpuInfo(sf::RenderTexture& texture)
     {
         std::stringstream ss;
 
-        ss << "PC = " << c8::ui::Hex{cpuState->pc} << "\t" << "I = " << c8::ui::Hex{cpuState->ir} << "\n\n";
-        ss << "DT = " << c8::ui::Hex{cpuState->dt} << "\t" << "ST = " << c8::ui::Hex{cpuState->st} << "\n\n";
-        ss << "V0 = " << c8::ui::Hex{cpuState->v[0x0]} << "\tV8 = " << c8::ui::Hex{cpuState->v[0x8]} << "\n";
-        ss << "V1 = " << c8::ui::Hex{cpuState->v[0x1]} << "\tV9 = " << c8::ui::Hex{cpuState->v[0x9]} << "\n";
-        ss << "V2 = " << c8::ui::Hex{cpuState->v[0x2]} << "\tVA = " << c8::ui::Hex{cpuState->v[0xA]} << "\n";
-        ss << "V3 = " << c8::ui::Hex{cpuState->v[0x3]} << "\tVB = " << c8::ui::Hex{cpuState->v[0xB]} << "\n";
-        ss << "V4 = " << c8::ui::Hex{cpuState->v[0x4]} << "\tVC = " << c8::ui::Hex{cpuState->v[0xC]} << "\n";
-        ss << "V5 = " << c8::ui::Hex{cpuState->v[0x5]} << "\tVD = " << c8::ui::Hex{cpuState->v[0xD]} << "\n";
-        ss << "V6 = " << c8::ui::Hex{cpuState->v[0x6]} << "\tVE = " << c8::ui::Hex{cpuState->v[0xE]} << "\n";
-        ss << "V7 = " << c8::ui::Hex{cpuState->v[0x7]} << "\tVF = " << c8::ui::Hex{cpuState->v[0xF]} << "\n\n";
+        const CpuState& currentCpuState = getCurrentCpuState();
+
+        ss << "PC = " << c8::ui::Hex{currentCpuState.pc} << "\t" << "I = " << c8::ui::Hex{currentCpuState.ir} << "\n\n";
+        ss << "DT = " << c8::ui::Hex{currentCpuState.dt} << "\t" << "ST = " << c8::ui::Hex{currentCpuState.st} << "\n\n";
+        ss << "V0 = " << c8::ui::Hex{currentCpuState.v[0x0]} << "\tV8 = " << c8::ui::Hex{currentCpuState.v[0x8]} << "\n";
+        ss << "V1 = " << c8::ui::Hex{currentCpuState.v[0x1]} << "\tV9 = " << c8::ui::Hex{currentCpuState.v[0x9]} << "\n";
+        ss << "V2 = " << c8::ui::Hex{currentCpuState.v[0x2]} << "\tVA = " << c8::ui::Hex{currentCpuState.v[0xA]} << "\n";
+        ss << "V3 = " << c8::ui::Hex{currentCpuState.v[0x3]} << "\tVB = " << c8::ui::Hex{currentCpuState.v[0xB]} << "\n";
+        ss << "V4 = " << c8::ui::Hex{currentCpuState.v[0x4]} << "\tVC = " << c8::ui::Hex{currentCpuState.v[0xC]} << "\n";
+        ss << "V5 = " << c8::ui::Hex{currentCpuState.v[0x5]} << "\tVD = " << c8::ui::Hex{currentCpuState.v[0xD]} << "\n";
+        ss << "V6 = " << c8::ui::Hex{currentCpuState.v[0x6]} << "\tVE = " << c8::ui::Hex{currentCpuState.v[0xE]} << "\n";
+        ss << "V7 = " << c8::ui::Hex{currentCpuState.v[0x7]} << "\tVF = " << c8::ui::Hex{currentCpuState.v[0xF]} << "\n\n";
         ss << "Emulator State = " << (paused ? "PAUSED" : "RUNNING") << "\n";
-        ss << "Current CPU State = " << cpuStateIndex << "/" << maxCpuStates << "\n";
+        ss << "Current CPU State = " << currentCpuStateDisplayIndex << "/" << maxCpuStates << "\n";
         ss << "CPU Frequency = " << cpuHertz << "Hz" << "\n";
         ss << "Render Speed = " << hostFps << "FPS" << "\n\n";
         ss << "Controls:\n";
@@ -707,33 +741,35 @@ namespace c8::cpu
         c8::ui::drawText(texture, 0, 0, ss);
     }
 
-    void drawVga(sf::RenderTexture& texture)
+    void renderVga(sf::RenderTexture& texture)
     {
-        cpuState->vgaState.render(texture);
+        getCurrentCpuState().vgaState.render(texture);
     }
 
-    void draw(sf::RenderTexture& vgaTexture, sf::RenderTexture& cpuInfoTexture)
+    void render(sf::RenderTexture& vgaTexture, sf::RenderTexture& cpuInfoTexture)
     {
-        drawVga(vgaTexture);
-        drawCpuInfo(cpuInfoTexture);
+        renderVga(vgaTexture);
+        renderCpuInfo(cpuInfoTexture);
     }
 
     void decrementTimers()
     {
-        if (paused) {
+        if (paused && !doAdvanceOneClockCycle) {
             return;
         }
 
-        if (cpuState->dt > 0) {
-            cpuState->dt--;
+        CpuState& currentCpuState = getCurrentCpuState();
+
+        if (currentCpuState.dt > 0) {
+            currentCpuState.dt--;
         }
 
-        if (cpuState->st > 0) {
-            cpuState->st--;
+        if (currentCpuState.st > 0) {
+            currentCpuState.st--;
         }
     }
 
-    void processOpcode(const std::uint16_t word)
+    bool processOpcode(const std::uint16_t word)
     {
         const c8::opcodes::Opcode opcode = c8::opcodes::decode(word);
 
@@ -744,94 +780,80 @@ namespace c8::cpu
         const std::uint8_t kk = c8::opcodes::getOpcodeKK(word);
         const std::uint16_t nnn = c8::opcodes::getOpcodeNNN(word);
 
+        CpuState& currentCpuState = getCurrentCpuState();
+
         switch (opcode) {
         case c8::opcodes::Opcode::CLS:
-            return nextCpuState->CLS();
+            return currentCpuState.CLS();
         case c8::opcodes::Opcode::RET:
-            return nextCpuState->RET();
+            return currentCpuState.RET();
         case c8::opcodes::Opcode::JP_Addr:
-            return nextCpuState->JP_Addr(nnn);
+            return currentCpuState.JP_Addr(nnn);
         case c8::opcodes::Opcode::CALL_Addr:
-            return nextCpuState->CALL_Addr(nnn);
+            return currentCpuState.CALL_Addr(nnn);
         case c8::opcodes::Opcode::SE_Vx_Byte:
-            return nextCpuState->SE_Vx_Byte(x, kk);
+            return currentCpuState.SE_Vx_Byte(x, kk);
         case c8::opcodes::Opcode::SNE_Vx_Byte:
-            return nextCpuState->SNE_Vx_Byte(x, kk);
+            return currentCpuState.SNE_Vx_Byte(x, kk);
         case c8::opcodes::Opcode::SE_Vx_Vy:
-            return nextCpuState->SE_Vx_Vy(x, y);
+            return currentCpuState.SE_Vx_Vy(x, y);
         case c8::opcodes::Opcode::LD_Vx_Byte:
-            return nextCpuState->LD_Vx_Byte(x, kk);
+            return currentCpuState.LD_Vx_Byte(x, kk);
         case c8::opcodes::Opcode::ADD_Vx_Byte:
-            return nextCpuState->ADD_Vx_Byte(x, kk);
+            return currentCpuState.ADD_Vx_Byte(x, kk);
         case c8::opcodes::Opcode::LD_Vx_Vy:
-            return nextCpuState->LD_Vx_Vy(x, y);
+            return currentCpuState.LD_Vx_Vy(x, y);
         case c8::opcodes::Opcode::OR_Vx_Vy:
-            return nextCpuState->OR_Vx_Vy(x, y);
+            return currentCpuState.OR_Vx_Vy(x, y);
         case c8::opcodes::Opcode::AND_Vx_Vy:
-            return nextCpuState->AND_Vx_Vy(x, y);
+            return currentCpuState.AND_Vx_Vy(x, y);
         case c8::opcodes::Opcode::XOR_Vx_Vy:
-            return nextCpuState->XOR_Vx_Vy(x, y);
+            return currentCpuState.XOR_Vx_Vy(x, y);
         case c8::opcodes::Opcode::ADD_Vx_Vy:
-            return nextCpuState->ADD_Vx_Vy(x, y);
+            return currentCpuState.ADD_Vx_Vy(x, y);
         case c8::opcodes::Opcode::SUB_Vx_Vy:
-            return nextCpuState->SUB_Vx_Vy(x, y);
+            return currentCpuState.SUB_Vx_Vy(x, y);
         case c8::opcodes::Opcode::SHR_Vx_Vy:
-            return nextCpuState->SHR_Vx_Vy(x, y);
+            return currentCpuState.SHR_Vx_Vy(x, y);
         case c8::opcodes::Opcode::SUBN_Vx_Vy:
-            return nextCpuState->SUBN_Vx_Vy(x, y);
+            return currentCpuState.SUBN_Vx_Vy(x, y);
         case c8::opcodes::Opcode::SHL_Vx_Vy:
-            return nextCpuState->SHL_Vx_Vy(x, y);
+            return currentCpuState.SHL_Vx_Vy(x, y);
         case c8::opcodes::Opcode::SNE_Vx_Vy:
-            return nextCpuState->SNE_Vx_Vy(x, y);
+            return currentCpuState.SNE_Vx_Vy(x, y);
         case c8::opcodes::Opcode::LD_I_Addr:
-            return nextCpuState->LD_I_Addr(nnn);
+            return currentCpuState.LD_I_Addr(nnn);
         case c8::opcodes::Opcode::JP_V0_Addr:
-            return nextCpuState->JP_V0_Addr(nnn);
+            return currentCpuState.JP_V0_Addr(nnn);
         case c8::opcodes::Opcode::RND_Vx_Byte:
-            return nextCpuState->RND_Vx_Byte(x, kk);
+            return currentCpuState.RND_Vx_Byte(x, kk);
         case c8::opcodes::Opcode::DRW_Vx_Vy_Nibble:
-            return nextCpuState->DRW_Vx_Vy_Nibble(x, y, z);
+            return currentCpuState.DRW_Vx_Vy_Nibble(x, y, z);
         case c8::opcodes::Opcode::SKP_Vx:
-            return nextCpuState->SKP_Vx(x);
+            return currentCpuState.SKP_Vx(x);
         case c8::opcodes::Opcode::SKNP_Vx:
-            return nextCpuState->SKNP_Vx(x);
+            return currentCpuState.SKNP_Vx(x);
         case c8::opcodes::Opcode::LD_Vx_DT:
-            return nextCpuState->LD_Vx_DT(x);
+            return currentCpuState.LD_Vx_DT(x);
         case c8::opcodes::Opcode::LD_Vx_K:
-            return nextCpuState->LD_Vx_K(x);
+            return currentCpuState.LD_Vx_K(x);
         case c8::opcodes::Opcode::LD_DT_Vx:
-            return nextCpuState->LD_DT_Vx(x);
+            return currentCpuState.LD_DT_Vx(x);
         case c8::opcodes::Opcode::LD_ST_Vx:
-            return nextCpuState->LD_ST_Vx(x);
+            return currentCpuState.LD_ST_Vx(x);
         case c8::opcodes::Opcode::ADD_I_Vx:
-            return nextCpuState->ADD_I_Vx(x);
+            return currentCpuState.ADD_I_Vx(x);
         case c8::opcodes::Opcode::LD_F_Vx:
-            return nextCpuState->LD_F_Vx(x);
+            return currentCpuState.LD_F_Vx(x);
         case c8::opcodes::Opcode::LD_B_Vx:
-            return nextCpuState->LD_B_Vx(x);
+            return currentCpuState.LD_B_Vx(x);
         case c8::opcodes::Opcode::LD_IAddr_Vx:
-            return nextCpuState->LD_IAddr_Vx(x);
+            return currentCpuState.LD_IAddr_Vx(x);
         case c8::opcodes::Opcode::LD_Vx_IAddr:
-            return nextCpuState->LD_Vx_IAddr(x);
+            return currentCpuState.LD_Vx_IAddr(x);
         case c8::opcodes::Opcode::Invalid:
-            return;
-        }
-    }
-
-    void cleanupOldCpuStates()
-    {
-        while (cpuStates > maxCpuStates) {
-            CpuState* newOldestCpuState = oldestCpuState->nextState;
-
-            newOldestCpuState->previousState = nullptr;
-            oldestCpuState->nextState = nullptr;
-            oldestCpuState->previousState = nullptr;
-
-            delete oldestCpuState;
-
-            oldestCpuState = newOldestCpuState;
-            cpuStates--;
-            cpuStateIndex--;
+        default:
+            return false;
         }
     }
 
@@ -842,35 +864,38 @@ namespace c8::cpu
         }
 
         doAdvanceOneClockCycle = false;
+        currentCpuStateDisplayIndex = currentCpuStateDisplayIndex == maxCpuStates ? maxCpuStates : currentCpuStateDisplayIndex + 1;
 
-        if (cpuState->nextState != nullptr) {
-            cpuState = cpuState->nextState;
-            cpuStateIndex++;
+        // If the currentCpuStateIndex != headCpuStateIndex then we are currently
+        // in a past cpu cycle, so to advance by 1 clock cycle, just increment
+        // currentCpuStateIndex until it equals headCpuStateIndex
+        if (currentCpuStateIndex != headCpuStateIndex) {
+            currentCpuStateIndex = currentCpuStateIndex == maxCpuStates - 1 ? 0 : currentCpuStateIndex + 1;
 
             return;
         }
 
-        std::uint16_t opcode = c8::mem::readWord(cpuState->pc);
+        CpuState& currentCpuState = getCurrentCpuState();
+
+        const std::uint16_t opcode = c8::mem::readWord(currentCpuState.pc);
 
         if (opcode == 0x0){
             return;
         }
 
-        nextCpuState = new CpuState{cpuState};
+        totalCpuCycles++;
+        headCpuStateIndex = headCpuStateIndex == maxCpuStates - 1 ? 0 : headCpuStateIndex + 1;
+        currentCpuStateIndex = headCpuStateIndex;
 
-        processOpcode(opcode);
+        cpuStates[headCpuStateIndex] = currentCpuState;
 
-        if (!nextCpuState->didUpdate){
-            delete nextCpuState;
-            
-            return;
+        const bool didUpdate = processOpcode(opcode);
+
+        // If executing the next cpu instruction didn't result in any
+        // changes to the cpu state, we do not need to keep this one in our history.
+        if (!didUpdate) {
+            headCpuStateIndex = headCpuStateIndex == 0 ? maxCpuStates - 1 : headCpuStateIndex - 1;
+            currentCpuStateIndex = headCpuStateIndex;
         }
-
-        cpuStateIndex++;
-        cpuStates++;
-        cpuState->nextState = nextCpuState;
-        cpuState = nextCpuState;
-
-        cleanupOldCpuStates();
     }
 }
