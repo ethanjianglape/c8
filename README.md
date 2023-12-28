@@ -45,4 +45,4 @@ To start the emulator in a paused state, use
 - [ ] Implement remaining CHIP-8 CPU [quirks](https://github.com/chip-8/chip-8-database/blob/master/database/quirks.json)
 - [ ] Implement [SUPER-CHIP instructions](https://chip-8.github.io/extensions/)
 - [ ] Add cross platform config file for things like pixel size/color, CPU frequency, etc.
-- [ ] Add additinal control flags and a -help message.
+- [ ] Add additinal control flags and a `-help` message
