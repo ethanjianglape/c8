@@ -6,6 +6,8 @@ You can find example CHIP-8 programs to run [here](https://github.com/kripod/chi
 
 You can also use [this CHIP-8 compiler](https://github.com/glouw/c8c) to write and test programs.
 
+![Example Image](/assets/c8-example.png)
+
 ## Dependencies
 
 1. [sfml](https://www.sfml-dev.org/)
@@ -31,8 +33,6 @@ To start the emulator in a paused state, use
 ```
 ./bin/c8 -p
 ```
-
-![Example Image](/assets/c8-example.png)
 
 ## Features
 
