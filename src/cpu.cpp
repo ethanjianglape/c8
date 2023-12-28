@@ -616,8 +616,6 @@ namespace c8::cpu
     };
 
     constexpr int maxCpuStates = 1000;
-    //int cpuStates = 0;
-    //int cpuStateIndex = 0;
 
     CpuState cpuStates[maxCpuStates];
 
@@ -625,10 +623,6 @@ namespace c8::cpu
     int currentCpuStateDisplayIndex = 0;
     int currentCpuStateIndex = 0;
     int headCpuStateIndex = 0;
-
-    //CpuState* oldestCpuState;
-    //CpuState* cpuState;
-    //CpuState* nextCpuState;
 
     CpuState& getCurrentCpuState()
     {
