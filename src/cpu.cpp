@@ -575,7 +575,21 @@ namespace c8::cpu
 
         bool LD_B_Vx(const std::uint8_t x)
         {
-            std::cout << "LD B V" << (int)x << std::endl;
+            std::uint8_t* vx = getRegister(x);
+
+            if (vx == nullptr) {
+                return false;
+            }
+
+            const std::uint8_t hundreds = (*vx / 100) % 10;
+            const std::uint8_t tens = (*vx / 10) % 10;
+            const std::uint8_t ones = *vx % 10;
+
+            c8::mem::writeByte(ir, hundreds);
+            c8::mem::writeByte(ir + 1, tens);
+            c8::mem::writeByte(ir + 2, ones);
+
+            pc += 2;
 
             return true;
         }
