@@ -37,7 +37,7 @@ namespace c8::mem
 
     std::uint16_t readWord(const std::uint16_t addr);
 
-    void writeByte(const int addr, const std::uint16_t data);
+    void writeByte(const int addr, const std::uint8_t data);
 
     std::uint16_t getFontSpriteAddress(const std::uint8_t spriteIndex);
 

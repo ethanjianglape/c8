@@ -41,6 +41,11 @@ void processArgs(int argc, char** argv)
     args.assign(argv + 1, argv + argc);
 
     for (const auto& arg : args) {
+        if (arg == "-p") {
+            c8::cpu::togglePaused();
+            continue;
+        }
+
         std::ifstream file{arg};
 
         if (file.is_open()) {

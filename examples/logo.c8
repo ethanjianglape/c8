@@ -1,0 +1,12 @@
+main()
+{
+    auto c1 = 10;
+    auto c2 = 8;
+
+    putchar(24, 13, c1);
+    putchar(30, 20, c2);
+
+    while (1) {
+
+    }
+}

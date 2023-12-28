@@ -14,6 +14,7 @@
 */
 
 #include "opcodes.hpp"
+#include "ui.hpp"
 
 #include <string>
 #include <sstream>
@@ -204,8 +205,8 @@ namespace c8::opcodes
         const int y = c8::opcodes::getOpcodeY(word);
         const int z = c8::opcodes::getOpcodeZ(word);
 
-        const int kk = c8::opcodes::getOpcodeKK(word);
-        const int nnn = c8::opcodes::getOpcodeNNN(word);
+        const std::uint8_t kk = c8::opcodes::getOpcodeKK(word);
+        const std::uint16_t nnn = c8::opcodes::getOpcodeNNN(word);
 
         std::stringstream ss;
 
@@ -223,19 +224,19 @@ namespace c8::opcodes
             ss << "CALL 0x" << std::setfill('0') << std::setw(3) << std::uppercase << std::hex << nnn << std::dec << " (" << nnn << ")";
             break;
         case Opcode::SE_Vx_Byte:
-            ss << "SE V" << std::uppercase << std::hex << x << ", " << kk;
+            ss << "SE V" << std::uppercase << std::hex << x << ", " << c8::ui::Hex{kk};
             break;
         case Opcode::SNE_Vx_Byte:
-            ss << "SNE V" << std::uppercase << std::hex << x << ", " << kk;
+            ss << "SNE V" << std::uppercase << std::hex << x << ", " << c8::ui::Hex{kk};
             break;
         case Opcode::SE_Vx_Vy:
             ss << "SE V" << std::uppercase << std::hex << x << ", V" << std::uppercase << std::hex << y;
             break;
         case Opcode::LD_Vx_Byte:
-            ss << "LD V" << std::uppercase << std::hex << x << ", " << kk;
+            ss << "LD V" << std::uppercase << std::hex << x << ", " << c8::ui::Hex{kk};
             break;
         case Opcode::ADD_Vx_Byte:
-            ss << "ADD V" << std::uppercase << std::hex << x << ", " << kk;
+            ss << "ADD V" << std::uppercase << std::hex << x << ", " << c8::ui::Hex{kk};
             break;
         case Opcode::LD_Vx_Vy:
             ss << "LD V" << std::uppercase << std::hex << x << ", V" << std::uppercase << std::hex << y;
@@ -274,7 +275,7 @@ namespace c8::opcodes
             ss << "JP V0, 0x" << std::setfill('0') << std::setw(3) << std::uppercase << std::hex << nnn << std::dec << " (" << nnn << ")";
             break;
         case Opcode::RND_Vx_Byte:
-            ss << "RND V" << std::uppercase << std::hex << x << ", " << kk;
+            ss << "RND V" << std::uppercase << std::hex << x << ", " << c8::ui::Hex{kk};
             break;
         case Opcode::DRW_Vx_Vy_Nibble:
             ss << "DRW V" << std::uppercase << std::hex << x << ", V" << std::uppercase << std::hex << y << ", " << z;
