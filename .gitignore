@@ -2,3 +2,7 @@ bin/*
 programs/*
 fonts/*
 .vscode
+/build
+/c8vs/.vs/c8vs
+/c8vs/x64/Debug
+/c8vs/.vs
