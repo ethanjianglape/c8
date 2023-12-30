@@ -28,7 +28,7 @@ namespace c8::cpu
 {
     std::random_device rd;
     std::mt19937 generator{rd()};
-    std::uniform_int_distribution<std::uint8_t> distribution{0, 255};
+    std::uniform_int_distribution<int> distribution{0, 255};
 
     int cpuHertz;
     int hostFps;
