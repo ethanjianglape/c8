@@ -23,9 +23,9 @@ make
 ### Windows
 Open `c8vs.sln` in visual studio.
 
-Make sure [sfml](https://www.sfml-dev.org/tutorials/2.6/start-vc.php) is configured properly for visual studio.
+Ensure [sfml](https://www.sfml-dev.org/tutorials/2.6/start-vc.php) is installed and configured properly for visual studio.
 
-By default, c8vs expects the sfml install directly to be in `C:\SFML-2.6.1\`.
+By default, c8vs expects sfml to be installed in `C:\SFML-2.6.1\`.
 ## Running
 
 Running `./bin/c8` by itself will start the emulator with a default program loaded into memory that simply prints "C8" onto the screen.
