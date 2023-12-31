@@ -11,27 +11,31 @@ You can also use [this CHIP-8 compiler](https://github.com/glouw/c8c) to write a
 ## Dependencies
 
 1. [sfml](https://www.sfml-dev.org/)
+2. c++20
 
-## Building and Running
+## Building
+### Linux
 
-To build just use
-
+Ensure that `libsfml-dev` is installed on your machine and run the following command:
 ```
 make
 ```
-After compiling you can run with
-```
-./bin/c8
-```
-This will run the emulator with the default included program that just prints "c8" onto the screen.
+### Windows
+Open `c8vs.sln` in visual studio.
 
-To run a different program, use
+Ensure [sfml](https://www.sfml-dev.org/tutorials/2.6/start-vc.php) is installed and configured properly for visual studio.
+
+By default, c8vs expects sfml to be installed in `C:\SFML-2.6.1\`.
+## Running
+
+Running `./bin/c8` by itself will start the emulator with a default program loaded into memory that simply prints "C8" onto the screen.
+
+To run a different CHIP-8 executable, run with `./bin/c8 yourProgramName.bin`.
+
+To start the emulator in a paused state, use the parameter `-p`:
+
 ```
-./bin/c8 yourProgramHere.bin
-```
-To start the emulator in a paused state, use
-```
-./bin/c8 -p
+./bin/c8 -p yourProgramName.bin
 ```
 
 ## Features
@@ -39,10 +43,10 @@ To start the emulator in a paused state, use
 - [x] Pause and resume emulation (use -p flag to start the emulator in the paused state)
 - [x] Execute CPU cycles one at a time
 - [x] Go back one CPU cycle (up to 1,000 total)
+- [x] Linux and Windows support
 
 ## Todo
 
 - [ ] Implement remaining CHIP-8 CPU [quirks](https://github.com/chip-8/chip-8-database/blob/master/database/quirks.json)
 - [ ] Implement [SUPER-CHIP instructions](https://chip-8.github.io/extensions/)
-- [ ] Add cross platform config file for things like pixel size/color, CPU frequency, etc.
 - [ ] Add additinal control flags and a `-help` message
