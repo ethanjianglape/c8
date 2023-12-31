@@ -56,7 +56,9 @@ namespace c8::cpu
 
     void decrementTimers();
 
-    void render(sf::RenderTexture& vgaTexture, sf::RenderTexture& cpuInfoTexture);
+    void renderVga(sf::RenderTexture& texture);
+
+    void renderCpuInfo(sf::RenderTexture& texture);
 
     std::uint8_t* getRegister(const std::uint8_t index);
 

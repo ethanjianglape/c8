@@ -21,9 +21,13 @@
 #include "cpu.hpp"
 #include "vga.hpp"
 #include "fonts.hpp"
+#include "config.hpp"
 
 namespace c8::ui
 {
+    constexpr int emulatorInfoWidth = 500;
+    constexpr int emulatorInfoHeight = 500;
+
     std::unique_ptr<sf::RenderWindow> window;
 
     sf::Font font;
@@ -32,7 +36,11 @@ namespace c8::ui
     {
         font.loadFromMemory(&c8::fonts::courierFontData, c8::fonts::courierFontDataLength);
 
-        sf::VideoMode vm{c8::vga::hostRenderWidth, 1000, sf::VideoMode::getDesktopMode().bitsPerPixel};
+        const unsigned int height = c8::config::showEmulatorInfo ? 
+            c8::config::getRenderHeight() + emulatorInfoHeight : 
+            c8::config::getRenderHeight();
+
+        sf::VideoMode vm{c8::config::getRenderWidth(), height, sf::VideoMode::getDesktopMode().bitsPerPixel};
         window = std::make_unique<sf::RenderWindow>(vm, "c8");
     }
 
@@ -94,22 +102,28 @@ namespace c8::ui
 
     void draw()
     {
+        const bool showEmulatorInfo = c8::config::showEmulatorInfo;
+
         window->clear(sf::Color::Black);
 
         sf::RenderTexture vgaTexture;
         sf::RenderTexture cpuInfoTexture;
         sf::RenderTexture memoryTexture;
 
-        vgaTexture.create(c8::vga::hostRenderWidth, c8::vga::hostRenderHeight);
+        vgaTexture.create(c8::config::getRenderWidth(), c8::config::getRenderHeight());
         cpuInfoTexture.create(500, 500);
         memoryTexture.create(500, 500);
 
-        vgaTexture.clear(sf::Color::Black);
+        vgaTexture.clear(c8::config::backgroundColor);
         cpuInfoTexture.clear(sf::Color::Black);
         memoryTexture.clear(sf::Color::Black);
 
-        c8::cpu::render(vgaTexture, cpuInfoTexture);
-        c8::mem::render(memoryTexture);
+        c8::cpu::renderVga(vgaTexture);
+
+        if (showEmulatorInfo) {
+            c8::cpu::renderCpuInfo(cpuInfoTexture);
+            c8::mem::render(memoryTexture);
+        }
 
         vgaTexture.display();
         cpuInfoTexture.display();
@@ -120,12 +134,15 @@ namespace c8::ui
         sf::Sprite memorySprite{memoryTexture.getTexture()};
 
         vgaSprite.setPosition(0, 0);
-        cpuInfoSprite.setPosition(500, c8::vga::hostRenderHeight + 10);
-        memorySprite.setPosition(0, c8::vga::hostRenderHeight + 10);
+        cpuInfoSprite.setPosition(500, c8::config::getRenderHeight() + 10);
+        memorySprite.setPosition(0, c8::config::getRenderHeight() + 10);
 
         window->draw(vgaSprite);
-        window->draw(cpuInfoSprite);
-        window->draw(memorySprite);
+
+        if (showEmulatorInfo) {
+            window->draw(cpuInfoSprite);
+            window->draw(memorySprite);
+        }
 
         window->display();
     }

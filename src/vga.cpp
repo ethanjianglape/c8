@@ -17,6 +17,7 @@
 
 #include "vga.hpp"
 #include "cpu.hpp"
+#include "config.hpp"
 
 namespace c8::vga
 {
@@ -93,13 +94,13 @@ namespace c8::vga
             for (std::uint8_t x = 0; x < frameBufferWidth; x++) {
                 const bool bit = frameBuffer[y][x];
 
-                const int hostX = x * hostPixelSize;
-                const int hostY = y * hostPixelSize;
+                const int hostX = x * c8::config::pixelWidth;
+                const int hostY = y * c8::config::pixelHeight;
 
                 if (bit) {
-                    sf::RectangleShape rec{sf::Vector2f{hostPixelSize, hostPixelSize}};
+                    sf::RectangleShape rec{sf::Vector2f{c8::config::pixelWidth, c8::config::pixelHeight}};
 
-                    rec.setFillColor(sf::Color::Green);
+                    rec.setFillColor(c8::config::pixelColor);
                     rec.setPosition(hostX, hostY);
 
                     texture.draw(rec);

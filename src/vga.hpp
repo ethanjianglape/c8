@@ -28,11 +28,6 @@ namespace c8::vga
     inline constexpr std::uint8_t frameBufferWidth = 64;
     inline constexpr std::uint8_t frameBufferHeight = 32;
 
-    inline constexpr int hostPixelSize = 16;
-
-    inline constexpr int hostRenderWidth = frameBufferWidth * hostPixelSize;
-    inline constexpr int hostRenderHeight = frameBufferHeight * hostPixelSize;
-
     class VgaState
     {
     private:

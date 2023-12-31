@@ -754,12 +754,6 @@ namespace c8::cpu
         getCurrentCpuState().vgaState.render(texture);
     }
 
-    void render(sf::RenderTexture& vgaTexture, sf::RenderTexture& cpuInfoTexture)
-    {
-        renderVga(vgaTexture);
-        renderCpuInfo(cpuInfoTexture);
-    }
-
     void decrementTimers()
     {
         if (paused && !doAdvanceOneClockCycle) {

@@ -16,6 +16,8 @@
 #pragma once
 
 #include <chrono>
+#include <SFML/Graphics.hpp>
+#include "vga.hpp"
 
 namespace c8::config
 {
@@ -24,4 +26,22 @@ namespace c8::config
 
     inline constexpr int targetCpuFrequency = 500;
     inline constexpr double targetCpuCyclesPerFrame = targetCpuFrequency / targetHostFps;
+
+    inline constexpr bool showEmulatorInfo = true;
+
+    inline constexpr int pixelWidth = 16;
+    inline constexpr int pixelHeight = 16;
+
+    inline const sf::Color backgroundColor = sf::Color::Black;
+    inline const sf::Color pixelColor = sf::Color::Green;
+
+    inline unsigned int getRenderWidth()
+    {
+        return c8::vga::frameBufferWidth * pixelWidth;
+    }
+
+    inline unsigned int getRenderHeight()
+    {
+        return c8::vga::frameBufferHeight * pixelHeight;
+    }
 }
