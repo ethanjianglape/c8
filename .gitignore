@@ -6,3 +6,14 @@ fonts/*
 /c8vs/.vs/c8vs
 /c8vs/x64/Debug
 /c8vs/.vs
+
+# CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
