@@ -14,9 +14,6 @@
 */
 
 #include <array>
-#include <algorithm>
-#include <cstring>
-#include <unordered_map>
 
 #include "cpu.hpp"
 #include "opcodes.hpp"

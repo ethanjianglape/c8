@@ -15,10 +15,6 @@
 
 #pragma once
 
-#include <atomic>
-#include <chrono>
-#include <memory>
-#include <thread>
 #include <cstdint>
 
 #include <SFML/Graphics.hpp>

@@ -78,7 +78,7 @@ namespace c8::ui
         while (const std::optional<sf::Event> event = window->pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
                 window->close();
-                break;
+                return;
             }
 
             if (const auto* keyPress = event->getIf<sf::Event::KeyPressed>()) {
