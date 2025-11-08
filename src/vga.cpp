@@ -13,10 +13,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <cstring>
-
 #include "vga.hpp"
-#include "cpu.hpp"
 #include "config.hpp"
 
 namespace c8::vga
@@ -94,14 +91,14 @@ namespace c8::vga
             for (std::uint8_t x = 0; x < frameBufferWidth; x++) {
                 const bool bit = frameBuffer[y][x];
 
-                const int hostX = x * c8::config::pixelWidth;
-                const int hostY = y * c8::config::pixelHeight;
+                const auto hostX = static_cast<float>(x * c8::config::pixelWidth);
+                const auto hostY = static_cast<float>(y * c8::config::pixelHeight);
 
                 if (bit) {
                     sf::RectangleShape rec{sf::Vector2f{c8::config::pixelWidth, c8::config::pixelHeight}};
 
                     rec.setFillColor(c8::config::pixelColor);
-                    rec.setPosition(hostX, hostY);
+                    rec.setPosition(sf::Vector2f{hostX, hostY});
 
                     texture.draw(rec);
                 }

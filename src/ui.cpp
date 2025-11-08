@@ -16,10 +16,10 @@
 #include <memory>
 
 #include <SFML/Graphics.hpp>
+#include <optional>
 
 #include "ui.hpp"
 #include "cpu.hpp"
-#include "vga.hpp"
 #include "fonts.hpp"
 #include "config.hpp"
 
@@ -34,19 +34,22 @@ namespace c8::ui
 
     void initialize()
     {
-        font.loadFromMemory(&c8::fonts::courierFontData, c8::fonts::courierFontDataLength);
+        if (!font.openFromMemory(&c8::fonts::courierFontData, c8::fonts::courierFontDataLength)){
+            return;
+        }
 
         const unsigned int height = c8::config::showEmulatorInfo ? 
             c8::config::getRenderHeight() + emulatorInfoHeight : 
             c8::config::getRenderHeight();
 
-        sf::VideoMode vm{c8::config::getRenderWidth(), height, sf::VideoMode::getDesktopMode().bitsPerPixel};
+        sf::VideoMode vm{{c8::config::getRenderWidth(), height}, sf::VideoMode::getDesktopMode().bitsPerPixel};
+
         window = std::make_unique<sf::RenderWindow>(vm, "c8");
     }
 
-    void processKeyPressed(const sf::Event& event)
+    void processKeyPressed(const sf::Event::KeyPressed* keyPress)
     {
-        const sf::Keyboard::Key key = event.key.code;
+        const sf::Keyboard::Key key = keyPress->code;
 
         if (key == sf::Keyboard::Key::P) { 
             c8::cpu::togglePaused();
@@ -72,25 +75,23 @@ namespace c8::ui
 
     void pollInput()
     {
-        sf::Event event;
-
-        while (window->pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
+        while (const std::optional<sf::Event> event = window->pollEvent()) {
+            if (event->is<sf::Event::Closed>()) {
                 window->close();
                 break;
             }
 
-            if (event.type == sf::Event::KeyPressed) {
-                processKeyPressed(event);
+            if (const auto* keyPress = event->getIf<sf::Event::KeyPressed>()) {
+                processKeyPressed(keyPress);
                 break;
             }
 
-            if (event.type == sf::Event::Resized) {
+            if (const auto* resize = event->getIf<sf::Event::Resized>()) {
                 sf::View view = window->getDefaultView();
 
                 view.setSize({
-                    (float)event.size.width,
-                    (float)event.size.height
+                    static_cast<float>(resize->size.x),
+                    static_cast<float>(resize->size.y)
                 });
 
                 window->setView(view);
@@ -110,9 +111,11 @@ namespace c8::ui
         sf::RenderTexture cpuInfoTexture;
         sf::RenderTexture memoryTexture;
 
-        vgaTexture.create(c8::config::getRenderWidth(), c8::config::getRenderHeight());
-        cpuInfoTexture.create(500, 500);
-        memoryTexture.create(500, 500);
+        bool success = true;
+
+        success = success && vgaTexture.resize({c8::config::getRenderWidth(), c8::config::getRenderHeight()});
+        success = success && cpuInfoTexture.resize({500, 500});
+        success = success && memoryTexture.resize({500, 500});
 
         vgaTexture.clear(c8::config::backgroundColor);
         cpuInfoTexture.clear(sf::Color::Black);
@@ -133,9 +136,9 @@ namespace c8::ui
         sf::Sprite cpuInfoSprite{cpuInfoTexture.getTexture()};
         sf::Sprite memorySprite{memoryTexture.getTexture()};
 
-        vgaSprite.setPosition(0, 0);
-        cpuInfoSprite.setPosition(500, c8::config::getRenderHeight() + 10);
-        memorySprite.setPosition(0, c8::config::getRenderHeight() + 10);
+        vgaSprite.setPosition({0, 0});
+        cpuInfoSprite.setPosition({500, static_cast<float>(c8::config::getRenderHeight() + 10)});
+        memorySprite.setPosition({0, static_cast<float>(c8::config::getRenderHeight() + 10)});
 
         window->draw(vgaSprite);
 
@@ -153,13 +156,12 @@ namespace c8::ui
         const int y, 
         std::string str)
     {
-        sf::Text text;
+        sf::Text text{font};
 
-        text.setFont(font);
         text.setString(str);
         text.setCharacterSize(18);
         text.setFillColor(sf::Color::Green);
-        text.setPosition(x, y);
+        text.setPosition({static_cast<float>(x), static_cast<float>(y)});
 
         texture.draw(text);
     }
