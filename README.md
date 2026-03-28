@@ -31,13 +31,13 @@ Running `./build/bin/c8` by itself will start the emulator with a default progra
 To run a CHIP-8 program:
 
 ```
-./build/bin/c8 yourProgram.ch8
+./build/bin/c8 yourProgram.bin
 ```
 
 To start paused, use the `-p` flag:
 
 ```
-./build/bin/c8 -p yourProgram.ch8
+./build/bin/c8 -p yourProgram.bin
 ```
 
 ## Features
