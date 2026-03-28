@@ -11,16 +11,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Enable multithreaded builds
-include(ProcessorCount)
-ProcessorCount(N)
-if(NOT N EQUAL 0)
-    set(CMAKE_BUILD_PARALLEL_LEVEL ${N} CACHE STRING "Number of parallel build jobs")
-    if(CMAKE_GENERATOR MATCHES "Make")
-        set(CMAKE_MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM} -j${N}")
-    endif()
-endif()
-
 # Set default build type to Release if not specified
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
@@ -54,14 +44,9 @@ set(HEADERS
 # Create executable
 add_executable(c8 ${SOURCES} ${HEADERS})
 
-# Create bin directory if it doesn't exist
-file(MAKE_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-
 # Set output directory for the executable
 set_target_properties(c8 PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_SOURCE_DIR}/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_SOURCE_DIR}/bin"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
 # Link SFML libraries
@@ -74,17 +59,10 @@ target_link_libraries(c8 PRIVATE
 # Compiler options
 target_compile_options(c8 PRIVATE
     # GCC/Clang warnings
-    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra>
+    $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall;-Wextra>
     # MSVC warnings
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
-
-# Enable optimizations for Release builds
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(c8 PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang>:-O3>
-    )
-endif()
 
 # Print build configuration
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")

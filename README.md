@@ -1,6 +1,6 @@
 # c8
 
-c8 is an emulator for the [CHIP-8 microprosessor](https://en.wikipedia.org/wiki/CHIP-8).
+c8 is an emulator for the [CHIP-8 microprocessor](https://en.wikipedia.org/wiki/CHIP-8).
 
 You can find example CHIP-8 programs to run [here](https://github.com/kripod/chip8-roms/tree/master).
 
@@ -10,43 +10,40 @@ You can also use [this CHIP-8 compiler](https://github.com/glouw/c8c) to write a
 
 ## Dependencies
 
-1. [sfml](https://www.sfml-dev.org/)
-2. c++20
+- [SFML 3](https://www.sfml-dev.org/)
+- C++20
 
 ## Building
-### Linux
 
-Ensure that `libsfml-dev` is installed on your machine and run the following command:
+Ensure `libsfml-dev` is installed, then:
+
 ```
-make
+cmake -B build
+cmake --build build
 ```
-### Windows
-Open `c8vs.sln` in visual studio.
 
-Ensure [sfml](https://www.sfml-dev.org/tutorials/2.6/start-vc.php) is installed and configured properly for visual studio.
+The executable will be at `build/bin/c8`.
 
-By default, c8vs expects sfml to be installed in `C:\SFML-2.6.1\`.
 ## Running
 
-Running `./bin/c8` by itself will start the emulator with a default program loaded into memory that simply prints "C8" onto the screen.
+Running `./build/bin/c8` by itself will start the emulator with a default program loaded into memory that prints "C8" onto the screen.
 
-To run a different CHIP-8 executable, run with `./bin/c8 yourProgramName.bin`.
-
-To start the emulator in a paused state, use the parameter `-p`:
+To run a CHIP-8 program:
 
 ```
-./bin/c8 -p yourProgramName.bin
+./build/bin/c8 yourProgram.ch8
+```
+
+To start paused, use the `-p` flag:
+
+```
+./build/bin/c8 -p yourProgram.ch8
 ```
 
 ## Features
 
-- [x] Pause and resume emulation (use -p flag to start the emulator in the paused state)
-- [x] Execute CPU cycles one at a time
-- [x] Go back one CPU cycle (up to 1,000 total)
-- [x] Linux and Windows support
-
-## Todo
-
-- [ ] Implement remaining CHIP-8 CPU [quirks](https://github.com/chip-8/chip-8-database/blob/master/database/quirks.json)
-- [ ] Implement [SUPER-CHIP instructions](https://chip-8.github.io/extensions/)
-- [ ] Add additinal control flags and a `-help` message
+- Pause and resume emulation at any time
+- Step through CPU cycles one at a time
+- Rewind execution up to 1,000 cycles
+- Real-time CPU frequency and FPS display
+- Start paused with the `-p` flag
